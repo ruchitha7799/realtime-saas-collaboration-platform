@@ -39,19 +39,6 @@ Backend (Node + Express)
        ↓
 PostgreSQL / Supabase
 
-**📸 Screenshots**
-Dashboard
-
-(Add screenshot here)
-
-Tasks
-
-(Add screenshot here)
-
-Team Chat
-
-(Add screenshot here)
-
 **🚀 Installation**
 
 Clone Repository
