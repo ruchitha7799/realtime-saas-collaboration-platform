@@ -102,12 +102,21 @@ function Dashboard() {
   };
 
   // 🟢 LOAD DATA
+  
   useEffect(() => {
-    fetchOrgs();
-    fetchTaskStats();
-    fetchActivities();
-  }, []);
 
+    fetchOrgs();
+
+    const orgId =
+      localStorage.getItem("orgId");
+
+    // ✅ only fetch if org exists
+    if (orgId) {
+      fetchTaskStats();
+      fetchActivities();
+    }
+
+}, []);
   return (
     <Layout>
       <h2 className="text-3xl font-bold mb-6">Dashboard</h2>

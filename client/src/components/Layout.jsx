@@ -6,7 +6,9 @@ import {
   LogOut,
   Moon,
   Sun,
-  Bell
+  Bell,
+  X,
+  User
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import socket from "../services/socket";
@@ -63,10 +65,34 @@ function Layout({ children }) {
         }
       );
 
-      // refresh user
-      const res = await API.get(
-        `/auth/me?organization_id=${localStorage.getItem("orgId")}`
-      );
+          // refresh user
+    const fetchUser = async () => {
+
+      try {
+
+        const orgId =
+          localStorage.getItem("orgId");
+
+        let url = "/auth/me";
+
+        // ✅ only attach orgId if exists
+        if (
+          orgId &&
+          orgId !== "null"
+        ) {
+          url += `?organization_id=${orgId}`;
+        }
+
+        const res = await API.get(url);
+
+        setUser(res.data);
+
+      } catch (error) {
+
+        console.log(error);
+
+      }
+    };
 
       setUser(res.data);
 
@@ -103,18 +129,21 @@ function Layout({ children }) {
         onClick={() => setShowProfile(!showProfile)}
         className="mb-2 flex items-center gap-3 cursor-pointer hover:bg-gray-800 p-2 rounded-xl transition"
       >
-          <img
-            src={
-              user?.avatar ||
-              "https://i.pravatar.cc/100"
-            }
-            alt="avatar"
-            className="w-12 h-12 rounded-full object-cover"
-          />
+          {user?.avatar ? (
+            <img
+              src={user.avatar}
+              alt="avatar"
+              className="w-12 h-12 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center">
+              <User size={24} className="text-gray-400" />
+            </div>
+          )}
 
           <div>
             <h2 className="font-bold">
-              {user?.name}
+              {user?.name || "Loading..."}
             </h2>
 
             <p className="text-sm text-gray-400 capitalize">
@@ -126,22 +155,35 @@ function Layout({ children }) {
           {showProfile && (
             <div className="absolute left-72 top-5 bg-white dark:bg-gray-800 shadow-2xl rounded-2xl p-5 w-72 z-50 border dark:border-gray-700">
 
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="text-lg font-bold dark:text-white">Profile</h3>
+                <button
+                  onClick={() => setShowProfile(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
               <div className="flex flex-col items-center">
 
-                <img
-                  src={
-                    user?.avatar ||
-                    "https://i.pravatar.cc/100"
-                  }
-                  alt="avatar"
-                  className="w-24 h-24 rounded-full object-cover border-4 border-blue-500 shadow-lg"
-                />
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt="avatar"
+                    className="w-24 h-24 rounded-full object-cover border-4 border-blue-500 shadow-lg"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-gray-300 dark:bg-gray-600 border-4 border-blue-500 shadow-lg flex items-center justify-center">
+                    <User size={40} className="text-gray-500 dark:text-gray-400" />
+                  </div>
+                )}
 
-                <h2 className="font-bold text-xl mt-3 dark:text-white">
-                  {user?.name || "User"}
+                <h2 className="font-bold text-xl mt-4 dark:text-white">
+                  {user?.name || "Loading..."}
                 </h2>
 
-                <p className="text-gray-500 text-sm">
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                   {user?.email || "No email"}
                 </p>
 

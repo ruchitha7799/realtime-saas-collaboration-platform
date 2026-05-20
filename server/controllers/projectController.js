@@ -20,14 +20,15 @@ exports.createProject = async (req, res) => {
 // GET PROJECTS BY ORGANIZATION
 exports.getProjects = async (req, res) => {
   const { organization_id } = req.query;
-  if (!organization_id) {
+  const parsedOrgId = organization_id ? parseInt(organization_id, 10) : null;
+  if (!parsedOrgId) {
   return res.json([]);
 }
 
   try {
     const projects = await pool.query(
       "SELECT * FROM projects WHERE organization_id=$1",
-      [organization_id]
+      [parsedOrgId]
     );
 
     res.json(projects.rows);
@@ -39,19 +40,20 @@ exports.getProjects = async (req, res) => {
 
 exports.deleteProject = async (req, res) => {
   const { project_id } = req.body;
+  const parsedProjectId = parseInt(project_id, 10);
 
   try {
 
     // delete project tasks first
     await pool.query(
       "DELETE FROM tasks WHERE project_id=$1",
-      [project_id]
+      [parsedProjectId]
     );
 
     // delete project
     await pool.query(
       "DELETE FROM projects WHERE id=$1",
-      [project_id]
+      [parsedProjectId]
     );
 
     // 🔥 realtime update

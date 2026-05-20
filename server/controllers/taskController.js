@@ -12,6 +12,8 @@ exports.createTask = async (req, res) => {
   } = req.body;
 
   try {
+    const parsedProjectId = parseInt(project_id, 10);
+    const parsedAssignedTo = assigned_to ? parseInt(assigned_to, 10) : null;
 
     const task = await pool.query(
       `
@@ -28,8 +30,8 @@ exports.createTask = async (req, res) => {
       `,
       [
         title,
-        project_id,
-        assigned_to,
+        parsedProjectId,
+        parsedAssignedTo,
         priority || "low",
         due_date,
       ]
@@ -44,17 +46,19 @@ exports.createTask = async (req, res) => {
       .emit("taskUpdated");
 
     // 🔔 notification
-    await pool.query(
-      `
-      INSERT INTO notifications
-      (user_id, message)
-      VALUES ($1, $2)
-      `,
-      [
-        assigned_to,
-        `New task assigned: ${title}`,
-      ]
-    );
+    if (parsedAssignedTo) {
+      await pool.query(
+        `
+        INSERT INTO notifications
+        (user_id, message)
+        VALUES ($1, $2)
+        `,
+        [
+          parsedAssignedTo,
+          `New task assigned: ${title}`,
+        ]
+      );
+    }
 
     io.emit("notification", {
       message: `New task assigned: ${title}`
@@ -71,7 +75,8 @@ exports.createTask = async (req, res) => {
 // 🟢 GET TASKS
 exports.getTasks = async (req, res) => {
   const { project_id } = req.query;
-  if (!project_id) {
+  const parsedProjectId = project_id ? parseInt(project_id, 10) : null;
+  if (!parsedProjectId) {
   return res.json([]);
 }
 
@@ -88,7 +93,7 @@ exports.getTasks = async (req, res) => {
       WHERE project_id=$1
       ORDER BY tasks.id DESC
       `,
-      [project_id]
+      [parsedProjectId]
     );
 
     res.json(tasks.rows);

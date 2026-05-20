@@ -8,7 +8,8 @@ exports.uploadAttachment = async (
 ) => {
 
   const { task_id } = req.body;
-  if (!task_id) {
+  const parsedTaskId = task_id ? parseInt(task_id, 10) : null;
+  if (!parsedTaskId) {
     return res.json([]);
   }
   const userId = req.user.id;
@@ -38,7 +39,7 @@ exports.uploadAttachment = async (
         RETURNING *
         `,
         [
-          task_id,
+          parsedTaskId,
           userId,
           fileUrl,
           req.file.originalname
@@ -48,7 +49,7 @@ exports.uploadAttachment = async (
     // 🔥 realtime
     const io = req.app.get("io");
 
-    io.to(task_id.toString()).emit(
+    io.to(parsedTaskId.toString()).emit(
       "attachmentAdded"
     );
 
@@ -73,6 +74,7 @@ exports.getAttachments = async (
 ) => {
 
   const { task_id } = req.query;
+  const parsedTaskId = task_id ? parseInt(task_id, 10) : null;
 
   try {
 
@@ -84,7 +86,7 @@ exports.getAttachments = async (
         WHERE task_id=$1
         ORDER BY created_at DESC
         `,
-        [task_id]
+        [parsedTaskId]
       );
 
     res.json(attachments.rows);

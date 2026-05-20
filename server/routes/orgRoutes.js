@@ -46,4 +46,18 @@ router.get(
   auth,
   orgController.getActivities
 );
+
+// 🟢 ACCEPT INVITE
+router.get(
+  "/accept-invite/:token",
+  auth,
+  orgController.acceptInvite
+);
+
+// 🟢 SIGNUP WITH INVITE
+router.post(
+  "/signup-with-invite",
+  orgController.signupWithInvite
+);
+
 module.exports = router;

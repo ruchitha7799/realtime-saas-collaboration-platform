@@ -31,11 +31,13 @@ io.on("connection", (socket) => {
     "joinProject",
     (projectId) => {
 
-      socket.join(projectId);
-
-      console.log(
-        `User joined project ${projectId}`
-      );
+       // ✅ Only join if projectId is valid
+       if (projectId && projectId !== "null") {
+         socket.join(projectId);
+         console.log(
+           `User joined project ${projectId}`
+         );
+       }
     }
   );
 
@@ -44,11 +46,13 @@ io.on("connection", (socket) => {
     "joinTask",
     (taskId) => {
 
-      socket.join(taskId);
-
-      console.log(
-        `User joined task ${taskId}`
-      );
+       // ✅ Only join if taskId is valid
+       if (taskId && taskId !== "null") {
+         socket.join(taskId);
+         console.log(
+           `User joined task ${taskId}`
+         );
+       }
     }
   );
 

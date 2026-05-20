@@ -132,13 +132,17 @@ function Comments({ taskId }) {
             <div className="flex items-start gap-3">
 
               {/* Avatar */}
-              <img
-                src={
-                  c.avatar ||
-                  "https://i.pravatar.cc/100"
-                }
-                className="w-10 h-10 rounded-full object-cover"
-              />
+              {c.avatar ? (
+                <img
+                  src={c.avatar}
+                  alt={c.name}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-semibold text-xs">
+                  {c.name?.charAt(0).toUpperCase() || "U"}
+                </div>
+              )}
 
               <div className="flex-1">
 

@@ -120,13 +120,17 @@ function TeamChat() {
           >
 
             {/* Avatar */}
-            <img
-              src={
-                m.avatar ||
-                "https://i.pravatar.cc/100"
-              }
-              className="w-10 h-10 rounded-full object-cover"
-            />
+            {m.avatar ? (
+              <img
+                src={m.avatar}
+                alt={m.name}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-semibold text-xs">
+                {m.name?.charAt(0).toUpperCase() || "U"}
+              </div>
+            )}
 
             {/* Message */}
             <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-2xl max-w-[80%]">

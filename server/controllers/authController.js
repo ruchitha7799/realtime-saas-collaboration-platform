@@ -66,10 +66,11 @@ exports.signup = async (req, res) => {
 
   } catch (error) {
 
-    console.error(error);
+    console.log(error)
 
-    res.status(500).send(
-      "Signup error ❌"
+    res.status(500).json({
+      message: error.message
+    }
     );
   }
 };
@@ -114,8 +115,20 @@ exports.login = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
+    const user = await pool.query(
+      `
+      SELECT
+        id,
+        name,
+        email,
+        avatar
+      FROM users
+      WHERE id=$1
+      `,
+      [req.user.id]
+    );
 
-    const orgId = req.query.organization_id;
+    const orgId = req.query.organization_id ? parseInt(req.query.organization_id, 10) : null;
     if (!orgId) {
       return res.json({
         id: user.rows[0].id,
@@ -143,19 +156,6 @@ exports.getMe = async (req, res) => {
         role = membership.rows[0].role;
       }
     }
-
-    const user = await pool.query(
-      `
-      SELECT
-        id,
-        name,
-        email,
-        avatar
-      FROM users
-      WHERE id=$1
-      `,
-      [req.user.id]
-    );
 
     res.json({
       ...user.rows[0],

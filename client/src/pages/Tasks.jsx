@@ -8,7 +8,10 @@ import {
   Search,
   Calendar,
   User,
-  PlusCircle
+  PlusCircle,
+  FileText,
+  Download,
+  CheckCircle
 } from "lucide-react";
 
 function Tasks() {
@@ -282,9 +285,9 @@ function Tasks() {
       {/* Kanban Board */}
       <DragDropContext onDragEnd={onDragEnd}>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 gap-6">
 
-          {["todo", "in progress", "done"].map(
+          {["todo", "in progress"].map(
             (status) => (
 
             <Droppable
@@ -350,13 +353,17 @@ function Tasks() {
                               {/* Assigned User */}
                               <div className="flex items-center gap-3 mt-4">
 
-                                <img
-                                  src={
-                                    t.assigned_avatar ||
-                                    "https://i.pravatar.cc/100"
-                                  }
-                                  className="w-9 h-9 rounded-full object-cover border"
-                                />
+                                {t.assigned_avatar ? (
+                                  <img
+                                    src={t.assigned_avatar}
+                                    alt={t.assigned_name}
+                                    className="w-9 h-9 rounded-full object-cover border"
+                                  />
+                                ) : (
+                                  <div className="w-9 h-9 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center font-semibold text-xs border">
+                                    {t.assigned_name?.charAt(0).toUpperCase() || "?"}
+                                  </div>
+                                )}
 
                                 <div>
 
@@ -398,7 +405,137 @@ function Tasks() {
 
       </DragDropContext>
 
+      {/* Completed Tasks Section */}
+      {filteredTasks.filter((t) => t.status === "done").length > 0 && (
+        <div className="mt-10">
+          <div className="flex items-center gap-3 mb-6">
+            <CheckCircle className="text-green-500" size={24} />
+            <h2 className="text-2xl font-bold">
+              Completed Tasks ({filteredTasks.filter((t) => t.status === "done").length})
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTasks
+              .filter((t) => t.status === "done")
+              .map((t) => (
+                <CompletedTaskCard key={t.id} task={t} />
+              ))}
+          </div>
+        </div>
+      )}
+
     </Layout>
+  );
+}
+
+// Completed Task Card Component
+function CompletedTaskCard({ task }) {
+  const [attachments, setAttachments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAttachments();
+  }, []);
+
+  const fetchAttachments = async () => {
+    try {
+      const res = await API.get(
+        `/attachment/all?task_id=${task.id}`
+      );
+      setAttachments(res.data);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownload = (fileUrl, fileName) => {
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.download = fileName;
+    link.click();
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-lg hover:shadow-xl transition border-l-4 border-green-500">
+      {/* Task Title */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <h3 className="font-semibold text-lg line-through text-gray-500">
+            {task.title}
+          </h3>
+          <span className={`inline-block mt-2 px-2 py-1 text-xs rounded
+            ${task.priority === "high" && "bg-red-500 text-white"}
+            ${task.priority === "medium" && "bg-yellow-400"}
+            ${task.priority === "low" && "bg-green-400"}
+          `}>
+            {task.priority}
+          </span>
+        </div>
+        <CheckCircle className="text-green-500" size={20} />
+      </div>
+
+      {/* Assigned User */}
+      <div className="flex items-center gap-2 mb-4 text-sm">
+        {task.assigned_avatar ? (
+          <img
+            src={task.assigned_avatar}
+            alt={task.assigned_name}
+            className="w-6 h-6 rounded-full object-cover"
+          />
+        ) : (
+          <div className="w-6 h-6 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center font-semibold text-xs">
+            {task.assigned_name?.charAt(0).toUpperCase() || "?"}
+          </div>
+        )}
+        <span className="text-gray-600 dark:text-gray-300">
+          {task.assigned_name || "Unassigned"}
+        </span>
+      </div>
+
+      {/* Due Date */}
+      <p className="text-xs text-gray-500 mb-4">
+        Due: {task.due_date || "No date"}
+      </p>
+
+      {/* Attachments */}
+      <div className="border-t dark:border-gray-700 pt-3">
+        <div className="flex items-center gap-2 mb-2">
+          <FileText size={16} className="text-blue-500" />
+          <span className="font-semibold text-sm">Files ({attachments.length})</span>
+        </div>
+
+        {loading ? (
+          <p className="text-xs text-gray-500">Loading files...</p>
+        ) : attachments.length === 0 ? (
+          <p className="text-xs text-gray-500">No files attached</p>
+        ) : (
+          <div className="space-y-2">
+            {attachments.map((file) => (
+              <div
+                key={file.id}
+                className="flex items-center justify-between bg-gray-100 dark:bg-gray-700 p-2 rounded text-xs"
+              >
+                <span className="truncate text-gray-700 dark:text-gray-300">
+                  {file.file_name}
+                </span>
+                <button
+                  onClick={() =>
+                    handleDownload(file.file_url, file.file_name)
+                  }
+                  className="text-blue-500 hover:text-blue-700 ml-2"
+                  title="Download file"
+                >
+                  <Download size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

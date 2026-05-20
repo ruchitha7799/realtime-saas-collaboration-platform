@@ -52,6 +52,7 @@ exports.getUserOrgs = async (req, res) => {
 // 🟢 ADD MEMBER
 exports.addMember = async (req, res) => {
   const { email, organization_id, role } = req.body;
+  const parsedOrgId = parseInt(organization_id, 10);
 
   try {
     const user = await pool.query(
@@ -67,7 +68,7 @@ exports.addMember = async (req, res) => {
 
     await pool.query(
       "INSERT INTO memberships (user_id, organization_id, role) VALUES ($1, $2, $3)",
-      [userId, organization_id, role || "member"]
+      [userId, parsedOrgId, role || "member"]
     );
 
     res.send("Member added ✅");
@@ -82,13 +83,14 @@ exports.addMember = async (req, res) => {
 // 🟢 SEND INVITE
 exports.sendInvite = async (req, res) => {
   const { email, organization_id, role } = req.body;
+  const parsedOrgId = parseInt(organization_id, 10);
 
   try {
     const token = crypto.randomBytes(20).toString("hex");
 
     await pool.query(
       "INSERT INTO invitations (email, organization_id, role, token) VALUES ($1, $2, $3, $4)",
-      [email, organization_id, role || "member", token]
+      [email, parsedOrgId, role || "member", token]
     );
 
     const inviteLink = `http://localhost:5173/accept-invite/${token}`;
@@ -96,7 +98,7 @@ exports.sendInvite = async (req, res) => {
     // ✅ Activity log
     await logActivity(
       req.user.id,
-      organization_id,
+      parsedOrgId,
       `invited ${email} as ${role || "member"}`
     );
     await sendEmail(
@@ -157,6 +159,85 @@ exports.acceptInvite = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send("Error accepting invite ❌");
+  }
+};
+
+// 🟢 SIGNUP WITH INVITE
+exports.signupWithInvite = async (req, res) => {
+  const { token, name, password } = req.body;
+  const bcrypt = require("bcryptjs");
+  const jwt = require("jsonwebtoken");
+
+  try {
+    // Check if invite is valid
+    const invite = await pool.query(
+      "SELECT * FROM invitations WHERE token=$1 AND status='pending'",
+      [token]
+    );
+
+    if (invite.rows.length === 0) {
+      return res.status(400).send("Invalid or expired invite ❌");
+    }
+
+    const inviteData = invite.rows[0];
+    const email = inviteData.email;
+
+    // Check if user already exists
+    const existingUser = await pool.query(
+      "SELECT * FROM users WHERE email=$1",
+      [email]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(400).send("Email already registered ❌");
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user
+    const user = await pool.query(
+      "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *",
+      [name, email, hashedPassword]
+    );
+
+    const userId = user.rows[0].id;
+
+    // Add user to organization
+    await pool.query(
+      "INSERT INTO memberships (user_id, organization_id, role) VALUES ($1, $2, $3)",
+      [userId, inviteData.organization_id, inviteData.role]
+    );
+
+    // Update invite status
+    await pool.query(
+      "UPDATE invitations SET status='accepted' WHERE id=$1",
+      [inviteData.id]
+    );
+
+    // Log activity
+    await logActivity(
+      userId,
+      inviteData.organization_id,
+      `joined organization via invite`
+    );
+
+    // Generate JWT token
+    const jwtToken = jwt.sign(
+      { id: userId },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      token: jwtToken,
+      user: user.rows[0],
+      organization_id: inviteData.organization_id
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error signing up ❌");
   }
 };
 

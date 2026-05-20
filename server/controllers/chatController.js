@@ -60,7 +60,8 @@ exports.getMessages = async (
 ) => {
 
   const { project_id } = req.query;
-    if (!project_id) {
+  const parsedProjectId = project_id ? parseInt(project_id, 10) : null;
+    if (!parsedProjectId) {
       return res.json([]);
     }
 
@@ -79,7 +80,7 @@ exports.getMessages = async (
         WHERE project_id=$1
         ORDER BY messages.created_at ASC
         `,
-        [project_id]
+        [parsedProjectId]
       );
 
     res.json(messages.rows);

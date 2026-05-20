@@ -5,6 +5,7 @@ const pool = require("../db");
 exports.addComment = async (req, res) => {
 
   const { task_id, message } = req.body;
+  const parsedTaskId = parseInt(task_id, 10);
 
   const userId = req.user.id;
 
@@ -17,13 +18,13 @@ exports.addComment = async (req, res) => {
       VALUES ($1, $2, $3)
       RETURNING *
       `,
-      [task_id, userId, message]
+      [parsedTaskId, userId, message]
     );
 
     // 🔥 realtime update
     const io = req.app.get("io");
 
-    io.to(task_id.toString()).emit(
+    io.to(parsedTaskId.toString()).emit(
       "commentAdded"
     );
 
@@ -43,7 +44,8 @@ exports.addComment = async (req, res) => {
 exports.getComments = async (req, res) => {
 
   const { task_id } = req.query;
-  if (!task_id) {
+  const parsedTaskId = task_id ? parseInt(task_id, 10) : null;
+  if (!parsedTaskId) {
     return res.json([]);
   }
 
@@ -61,7 +63,7 @@ exports.getComments = async (req, res) => {
       WHERE task_id=$1
       ORDER BY comments.created_at ASC
       `,
-      [task_id]
+      [parsedTaskId]
     );
 
     res.json(comments.rows);
