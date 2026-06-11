@@ -58,11 +58,13 @@ node index.js
 
 Create .env inside server:
 
-DATABASE_URL=
-JWT_SECRET=
-EMAIL_USER=
-EMAIL_PASS=
+DATABASE_URL,
+JWT_SECRET,
+EMAIL_USER,
+EMAIL_PASS
 
 👨‍💻 Author
+PURU RUCHITHA
+B.Tech cse
 
-Puru Ruchitha
+⭐ If you found this project useful, please give it a star on GitHub!
